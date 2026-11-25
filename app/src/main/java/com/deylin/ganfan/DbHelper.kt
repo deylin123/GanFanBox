@@ -168,6 +168,14 @@ class DbHelper(context: Context) :
         return writableDatabase.insert("records", null, cv)
     }
 
+    /** 删一条下厨记录（只删记录，不动菜品池） */
+    fun deleteRecord(id: Long): Int =
+        writableDatabase.delete("records", "id=?", arrayOf(id.toString()))
+
+    /** 清空某一天的全部记录 */
+    fun deleteRecordsByDate(date: String): Int =
+        writableDatabase.delete("records", "date=?", arrayOf(date))
+
     private fun readRec(c: Cursor): Rec = Rec(
         date = c.getString(1), meal = c.getString(2), name = c.getString(3),
         taste = c.getString(4), kcal = c.getInt(5), rarity = c.getString(6),

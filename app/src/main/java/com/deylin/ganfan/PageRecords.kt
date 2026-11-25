@@ -120,6 +120,11 @@ class PageRecords(private val act: MainActivity) {
             root.addView(ec, lpTop(10))
         } else {
             for (r in dayRecs) root.addView(recRow(r), lpTop(10))
+            val clr = Ui.tv(c, "🗑 清空这天（${dayRecs.size} 条）", 11.5f, Ui.SUB)
+            clr.gravity = Gravity.RIGHT
+            Ui.pad(clr, 0, 10, 2, 0)
+            clr.setOnClickListener { askClearDay(dayRecs.size) }
+            root.addView(clr, Ui.lp(Ui.MP, Ui.WC))
         }
 
         // 统计卡
@@ -208,9 +213,46 @@ class PageRecords(private val act: MainActivity) {
         lp.leftMargin = Ui.dp(c, 10f)
         row.addView(info, lp)
         row.addView(Ui.tv(c, "${r.kcal} kcal", 12.5f, Ui.PRIMARY_D, true))
+        row.addView(delBtn { askDelete(r) })
         card.addView(row, Ui.lp(Ui.MP, Ui.WC))
         card.setOnClickListener { openStepsOf(r.name) }
         return card
+    }
+
+    /** 行尾删除按钮 */
+    private fun delBtn(onClick: () -> Unit): View {
+        val t = Ui.tv(c, "🗑", 15f, Ui.SUB)
+        Ui.pad(t, 10, 2, 2, 2)
+        t.setOnClickListener { onClick() }
+        return t
+    }
+
+    /** 删前确认；删完只重绘列表，不动别的 */
+    private fun askDelete(r: Rec) {
+        AlertDialog.Builder(act)
+            .setTitle("删除这条记录？")
+            .setMessage("「${r.name}」· ${humanDate(r.date)} ${r.meal}\n\n只删这条下厨记录，菜品池里的菜不会消失。")
+            .setPositiveButton("删除") { _, _ ->
+                val n = act.db().deleteRecord(r.id)
+                Toast.makeText(act, if (n > 0) "已删除「${r.name}」" else "这条已经不在了", Toast.LENGTH_SHORT).show()
+                render()
+            }
+            .setNegativeButton("取消", null)
+            .show()
+    }
+
+    /** 清空某一天 */
+    private fun askClearDay(n: Int) {
+        AlertDialog.Builder(act)
+            .setTitle("清空 ${humanDate(selDate)} 的记录？")
+            .setMessage("这一天共 $n 条下厨记录会被全部删除，菜品池不受影响。删除后不能恢复。")
+            .setPositiveButton("全部删除") { _, _ ->
+                val d = act.db().deleteRecordsByDate(selDate)
+                Toast.makeText(act, "已清空 $d 条", Toast.LENGTH_SHORT).show()
+                render()
+            }
+            .setNegativeButton("取消", null)
+            .show()
     }
 
     /** 足迹行：带做过几次 + 可点回看做法 */
@@ -229,6 +271,7 @@ class PageRecords(private val act: MainActivity) {
         lp.leftMargin = Ui.dp(c, 10f)
         row.addView(info, lp)
         row.addView(Ui.tv(c, "${r.kcal}", 11.5f, Ui.SUB))
+        row.addView(delBtn { askDelete(r) })
         card.addView(row, Ui.lp(Ui.MP, Ui.WC))
         card.setOnClickListener { openStepsOf(r.name) }
         return card
