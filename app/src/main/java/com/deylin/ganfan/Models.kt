@@ -12,6 +12,7 @@ data class Dish(
     val rarity: String,     // 普通 / 稀有 / 史诗 / 传说 / 神话
     val steps: String,      // 做法，换行分隔
     val source: String = "默认池",
+    val ref: String = "",   // 小红书话题标签，如 #广式家常 #下饭
     val id: Long = 0L
 )
 

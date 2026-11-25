@@ -247,19 +247,37 @@ class PageHome(private val act: MainActivity) {
         }
     }
 
-    /** 就做它：写入记录后直接给出做法 */
+    /** 就做它：写入记录（哪天做了哪道菜）后直接给出做法 */
     private fun cookIt(meal: String) {
         val d = HomeState.drawn[meal] ?: return
-        act.db().addRecord(Rec(today(), meal, d.name, d.taste, d.kcal, d.rarity, "已做"))
+        val date = today()
+        act.db().addRecord(Rec(date, meal, d.name, d.taste, d.kcal, d.rarity, "已做"))
         HomeState.drawn.remove(meal)
         drawAll()
-        openSteps(d)
+        Toast.makeText(act, "已记入 ${humanDate(date)} · $meal", Toast.LENGTH_SHORT).show()
+        openSteps(d, humanDate(date) + " " + meal + " · 已记入下厨记录")
     }
 
-    private fun openSteps(d: Dish) {
+    private fun humanDate(d: String): String {
+        val p = d.split("-")
+        return if (p.size == 3) "${p[1].toInt()}月${p[2].toInt()}日" else d
+    }
+
+    private fun openSteps(d: Dish, note: String? = null) {
         val sv = ScrollView(c)
         val b = Ui.col(c)
         Ui.pad(b, 18, 8, 18, 8)
+
+        if (!note.isNullOrEmpty()) {
+            val tip = Ui.tv(c, "✅ $note", 12f, Ui.PRIMARY_D, true)
+            tip.setBackground(Ui.round(c, Ui.PRIMARY_LIGHT, 10f))
+            tip.setPadding(Ui.dp(c, 10f), Ui.dp(c, 6f), Ui.dp(c, 10f), Ui.dp(c, 6f))
+            b.addView(tip)
+            val sp = Ui.lp(Ui.MP, Ui.WC)
+            sp.bottomMargin = Ui.dp(c, 10f)
+            tip.layoutParams = sp
+        }
+
         val lines = d.steps.split("\n").map { it.trim() }.filter { it.isNotEmpty() }
         if (lines.isEmpty()) {
             b.addView(Ui.tv(c, "这道还没写做法，可以去菜品池加上。", 13f, Ui.SUB))
@@ -281,11 +299,21 @@ class PageHome(private val act: MainActivity) {
                 b.addView(row, rl)
             }
         }
+
+        // 小红书：看别人怎么做的，多几个参考
+        val tag = if (d.ref.isNotEmpty()) d.ref else "#粤菜家常"
+        val xhs = Ui.tv(c, "📕 去小红书看这道菜 $tag", 12.5f, Ui.PRIMARY_D, true)
+        val xp = Ui.lp(Ui.MP, Ui.WC)
+        xp.topMargin = Ui.dp(c, 8f)
+        b.addView(xhs, xp)
+        xhs.setOnClickListener { Xhs.openDish(act, d.name) }
+
         sv.addView(b)
         AlertDialog.Builder(act)
             .setTitle("${d.name} · 做法")
             .setView(sv)
             .setPositiveButton("知道了", null)
+            .setNeutralButton("小红书") { _, _ -> Xhs.openDish(act, d.name) }
             .show()
     }
 }

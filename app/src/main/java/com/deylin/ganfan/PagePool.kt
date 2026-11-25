@@ -100,6 +100,12 @@ class PagePool(private val act: MainActivity) {
         Ui.pad(tags, 0, 5, 0, 0)
         info.addView(tags)
 
+        if (d.ref.isNotEmpty()) {
+            val ref = Ui.tv(c, d.ref, 10f, Ui.PRIMARY_D)
+            Ui.pad(ref, 0, 4, 0, 0)
+            info.addView(ref)
+        }
+
         r.addView(info, lp)
         card.addView(r, Ui.lp(Ui.MP, Ui.WC))
         card.setOnClickListener { showSteps(d) }
@@ -131,11 +137,20 @@ class PagePool(private val act: MainActivity) {
                 b.addView(row, rl)
             }
         }
+
+        val tag = if (d.ref.isNotEmpty()) d.ref else "#粤菜家常"
+        val xhs = Ui.tv(c, "📕 去小红书看这道菜 $tag", 12.5f, Ui.PRIMARY_D, true)
+        val xp = Ui.lp(Ui.MP, Ui.WC)
+        xp.topMargin = Ui.dp(c, 8f)
+        b.addView(xhs, xp)
+        xhs.setOnClickListener { Xhs.openDish(act, d.name) }
+
         sv.addView(b)
         AlertDialog.Builder(act)
             .setTitle("${d.name} · 做法")
             .setView(sv)
             .setPositiveButton("知道了", null)
+            .setNeutralButton("小红书") { _, _ -> Xhs.openDish(act, d.name) }
             .show()
     }
 
